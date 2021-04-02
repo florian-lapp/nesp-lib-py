@@ -3,8 +3,8 @@ import serial
 class Port :
     """Port a pump is connected to."""
 
-    # Default baud rate.
     BAUD_RATE_DEFAULT : int = 9600
+    """Default baud rate."""
 
     class Unavailability(Exception) :
         """Exception that indicates the unavailability of a port."""
@@ -14,8 +14,9 @@ class Port :
         """
         Constructs a port with the given name and baud rate.
 
-        Raises ValueError if the baud rate is invalid with the port.
-        Raises Unavailability if the port is unavailable.
+        Raises `ValueError` if the baud rate is invalid with the port.
+
+        Raises `Unavailability` if the port is unavailable.
         """
         try :
             self.__serial = serial.Serial(

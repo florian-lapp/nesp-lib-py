@@ -12,53 +12,63 @@ import time
 class Pump :
     """Pump."""
 
-    # Default address.
+    IDENTITY_IGNORE = 0
+    """Ignore identity."""
+
     ADDRESS_DEFAULT = 0
-    # Address limit.
+    """Default address."""
     ADDRESS_LIMIT = 99
+    """Address limit."""
 
-    # Default safe mode timeout in units of seconds.
     SAFE_MODE_TIMEOUT_DEFAULT = 0
-    # Safe mode timeout limit in units of seconds.
+    """Default safe mode timeout in units of seconds."""
     SAFE_MODE_TIMEOUT_LIMIT = 255
+    """Safe mode timeout limit in units of seconds."""
 
-    # Minimum syringe diameter in units of millimeters.
     SYRINGE_DIAMETER_MINIMUM = 0.1
-    # Maximum syringe diameter in units of millimeters.
+    """Minimum syringe diameter in units of millimeters."""
     SYRINGE_DIAMETER_MAXIMUM = 80.0
+    """Maximum syringe diameter in units of millimeters."""
 
-    # Delay between pulling polls while waiting in units of seconds.
     PUMPING_POLL_DELAY = 0.05
+    """Delay between pulling polls while waiting in units of seconds."""
 
     def __init__(
         self,
         port : Port,
-        identity : int,
+        identity : int = IDENTITY_IGNORE,
         address : int = ADDRESS_DEFAULT,
         safe_mode_timeout : int = SAFE_MODE_TIMEOUT_DEFAULT
     ) -> None :
         """
         Constructs a pump connected to the given port having the given identity, address, and safe
         mode timeout in units of seconds.
+
+        Raises `ValueError` if the address is invalid.
+
+        Raises `ValueError` if the safe mode timeout is invalid.
+
+        Raises `IdentityException` if the identity is nonzero and is not equal to the identity of
+        the pump connected to the given port.
         """
         if address < 0 or address > Pump.ADDRESS_LIMIT :
-            raise ValueError('Address invalid.')
+            raise ValueError('Address invalid: Value negative or exceeds limit.')
         self.__port = port
         self.__address = address
         self.__safe_mode = True
         self.__safe_mode_timeout_set(safe_mode_timeout, True)
-        identity_, firmware_version = self.__firmware_version_get()
-        if identity_ != identity :
-            raise ExceptionIdentity()
-        self.__identity = identity_
-        self.__firmware_version = firmware_version
+        identity_port, firmware_version_port = self.__firmware_version_get()
+        if identity != Pump.IDENTITY_IGNORE and identity_port != identity :
+            raise IdentityException()
+        self.__identity = identity_port
+        self.__firmware_version = firmware_version_port
 
     @property
     def address(self) -> int :
         """
         Gets the address of the pump.
 
-        Values: [0, 'ADDRESS_LIMIT']
+        Values: [`0`, `ADDRESS_LIMIT`]
         """
         return self.__address
 
@@ -130,7 +140,7 @@ class Pump :
             syringe_diameter < Pump.SYRINGE_DIAMETER_MINIMUM or
             syringe_diameter > Pump.SYRINGE_DIAMETER_MAXIMUM
         ) :
-            raise ValueError('Syringe diameter invalid.')
+            raise ValueError('Syringe diameter invalid: Value exceeds limit.')
         self.__command_transceive('DIA', [syringe_diameter])
 
     @property
@@ -139,7 +149,7 @@ class Pump :
         _, pumping_direction_string = self.__command_transceive('DIR')
         pumping_direction = Pump.__PUMPING_DIRECTION.get(pumping_direction_string)
         if pumping_direction is None :
-            raise ExceptionInternal()
+            raise InternalException()
         return pumping_direction
 
     @pumping_direction.setter
@@ -147,7 +157,7 @@ class Pump :
         """Sets the pumping direction of the pump."""
         pumping_direction_string = Pump.__PUMPING_DIRECTION_INTERNAL.get(pumping_direction)
         if pumping_direction_string is None :
-            raise ValueError('Pumping direction invalid.')
+            raise ValueError('Pumping direction invalid: Value unknown.')
         self.__command_transceive('DIR', [pumping_direction_string])
 
     @property
@@ -158,7 +168,7 @@ class Pump :
         units = match[2]
         value_milliliters = Pump.__VOLUME_MILLILITERS.get(units)
         if value_milliliters is None :
-            raise ExceptionInternal()
+            raise InternalException()
         return value_milliliters(value)
 
     @pumping_volume.setter
@@ -166,10 +176,12 @@ class Pump :
         """
         Sets the pumping volume of the pump in units of milliliters.
 
+        Raises `ValueError` if the pumping volume is invalid.
+
         Note: The value is truncated to the 4 most significant digits.
         """
         if pumping_volume < 0.001 / 1_000.0 or pumping_volume >= 10_000.0 :
-            raise ValueError('Pumping rate invalid.')
+            raise ValueError('Pumping volume invalid: Value exceeds limit.')
         if pumping_volume >= 10_000.0 / 1_000.0 :
             units = 'ML'
         else :
@@ -179,7 +191,7 @@ class Pump :
         try :
             self.__command_transceive('VOL', [pumping_volume])
         except ValueError :
-            raise ValueError('Pumping volume invalid.')
+            raise ValueError('Pumping volume invalid: Value exceeds limit.')
 
     @property
     def pumping_rate(self) -> float :
@@ -189,7 +201,7 @@ class Pump :
         units = match[2]
         value_milliliters_per_minute = Pump.__PUMPING_RATE_MILLILITERS_PER_MINUTE.get(units)
         if value_milliliters_per_minute is None :
-            raise ExceptionInternal()
+            raise InternalException()
         return value_milliliters_per_minute(value)
 
     @pumping_rate.setter
@@ -199,10 +211,12 @@ class Pump :
 
         The limits are dictated by the syringe diameter of the pump.
 
+        Raises `ValueError` if the pumping rate is invalid.
+
         Note: The value is truncated to the 4 most significant digits.
         """
         if pumping_rate < 0.001 / 60_000.0 or pumping_rate >= 10_000.0 :
-            raise ValueError('Pumping rate invalid.')
+            raise ValueError('Pumping rate invalid: Value exceeds limit.')
         if pumping_rate >= 10_000.0 / 60.0 :
             units = 'MM'
         elif pumping_rate >= 10_000.0 / 1_000.0 :
@@ -217,7 +231,7 @@ class Pump :
         try :
             self.__command_transceive('RAT', [pumping_rate, units])
         except ValueError :
-            raise ValueError('Pumping rate invalid.')
+            raise ValueError('Pumping rate invalid: Value exceeds limit.')
 
     @property
     def volume_infused(self) -> int :
@@ -338,48 +352,35 @@ class Pump :
         'UL' : lambda value : value * 1_000.0,
     }
 
-    __ERROR = {
-        # Not applicable.
-        'NA'  : lambda : Pump.__error_handle_not_applicable(),
-        # Out of range.
-        'OOR' : lambda : Pump.__error_handle_out_of_range(),
-        # Communication.
-        'COM' : lambda : Pump.__error_handle_communication(),
-        # Ignored.
-        'IGN' : lambda : Pump.__error_handle_ignored()
-    }
-
-    __ARGUMENT = {
-        str   : lambda value : Pump.__argument_str(value),
-        int   : lambda value : Pump.__argument_int(value),
-        float : lambda value : Pump.__argument_float(value)
-    }
-
-    @staticmethod
     def __error_handle_not_applicable() -> None :
-        raise ExceptionState()
+        raise StateException()
 
-    @staticmethod
     def __error_handle_out_of_range() -> None :
         raise ValueError()
 
-    @staticmethod
     def __error_handle_communication() -> None :
-        raise ExceptionChecksumRequest()
+        raise ChecksumRequestException()
 
-    @staticmethod
     def __error_handle_ignored() -> None :
         pass
 
-    @staticmethod
+    __ERROR = {
+        # Not applicable.
+        'NA'  : __error_handle_not_applicable,
+        # Out of range.
+        'OOR' : __error_handle_out_of_range,
+        # Communication.
+        'COM' : __error_handle_communication,
+        # Ignored.
+        'IGN' : __error_handle_ignored
+    }
+
     def __argument_str(value : str) -> str :
         return value
 
-    @staticmethod
     def __argument_int(value : int) -> str :
         return str(value)
 
-    @staticmethod
     def __argument_float(value : float) -> str :
         # From the docs: Maximum of 4 digits plus 1 decimal point. Maximum of 3 digits to the right
         # of the decimal point.
@@ -389,6 +390,12 @@ class Pump :
         if len(value_string) > 5 :
             value_string = value_string[0 : 5]
         return value_string
+
+    __ARGUMENT = {
+        str   : __argument_str,
+        int   : __argument_int,
+        float : __argument_float
+    }
 
     @staticmethod
     def __command_checksum_calculate(data : bytes) -> int :
@@ -414,29 +421,29 @@ class Pump :
     ) -> typing.Tuple[Status, typing.Optional[Alarm], str] :
         data_length = len(data_string)
         if data_length < 3 :
-            raise ExceptionInternal()
+            raise InternalException()
         address_string = data_string[0 : 2]
         address_ = int(address_string)
         if address_ != address :
-            raise ExceptionInternal()
+            raise InternalException()
         status_string = data_string[2]
         if status_string == cls.__STATUS_ALARM :
             if data_string[3] != '?' :
-                raise ExceptionInternal()
+                raise InternalException()
             alarm_string = data_string[4]
             alarm = cls.__ALARM.get(alarm_string)
             if alarm is None :
-                raise ExceptionInternal()
+                raise InternalException()
             return Status.STOPPED, alarm, ''
         status = cls.__STATUS.get(status_string)
         if status is None :
-            raise ExceptionInternal()
+            raise InternalException()
         result = data_string[3 : data_length]
         if result and result[0] == '?' :
             error_string = result[1 :]
             error = cls.__ERROR.get(error_string)
             if error is None :
-                raise ExceptionInternal()
+                raise InternalException()
             error()
         return status, None, result
 
@@ -480,7 +487,7 @@ class Pump :
     ) -> typing.Tuple[Status, typing.Optional[Alarm], str] :
         data = port.receive(1)
         if data[0] != cls.__STX :
-            raise ExceptionInternal()
+            raise InternalException()
         data = bytearray()
         while True :
             data_length = max(1, port.waiting_receive)
@@ -499,17 +506,17 @@ class Pump :
     ) -> typing.Tuple[Status, typing.Optional[Alarm], str] :
         data_header = port.receive(2)
         if data_header[0] != cls.__STX :
-            raise ExceptionInternal()
+            raise InternalException()
         data_length = data_header[1]
         if data_length <= 2 :
-            raise ExceptionInternal()
+            raise InternalException()
         data = port.receive(data_length - 1)
         if data[-1] != cls.__ETX :
-            raise ExceptionInternal()
+            raise InternalException()
         checksum = int.from_bytes(data[-3 : -1], byteorder = 'big', signed = False)
         data = data[0 : -3]
         if checksum != cls.__command_checksum_calculate(data) :
-            raise ExceptionChecksumReply()
+            raise ChecksumReplyException()
         data_string = data.decode()
         return cls.__command_reply_parse(address, data_string)
 
@@ -541,12 +548,12 @@ class Pump :
             else :
                 break
         if alarm is not None :
-            raise ExceptionStatusAlarm(alarm)
+            raise StatusAlarmException(alarm)
         if re_pattern_result is None :
             return status, result
         match = re_pattern_result.fullmatch(result)
         if match is None :
-            raise ExceptionInternal()
+            raise InternalException()
         return status, match
 
     def __command_transceive(
@@ -573,7 +580,7 @@ class Pump :
 
     def __safe_mode_timeout_set(self, safe_mode_timeout : int, alarm_ignore : bool) -> None :
         if safe_mode_timeout < 0 or safe_mode_timeout > Pump.SAFE_MODE_TIMEOUT_LIMIT :
-            raise ValueError('Safe mode timeout invalid.')
+            raise ValueError('Safe mode timeout invalid: Value negative or exceeds limit.')
         safe_mode = safe_mode_timeout != 0
         self.__command_transceive(
             'SAF', [safe_mode_timeout], alarm_ignore = alarm_ignore, safe_mode_receive = safe_mode
@@ -595,5 +602,5 @@ class Pump :
         units = match[3]
         value_milliliters = Pump.__VOLUME_MILLILITERS.get(units)
         if value_milliliters is None :
-            raise ExceptionInternal()
+            raise InternalException()
         return value_milliliters(value)

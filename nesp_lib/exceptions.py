@@ -1,12 +1,12 @@
 __all__ = [
     'Exception',
-    'ExceptionInternal',
-    'ExceptionIdentity',
-    'ExceptionChecksum',
-    'ExceptionChecksumRequest',
-    'ExceptionChecksumReply',
-    'ExceptionState',
-    'ExceptionStatusAlarm'
+    'InternalException',
+    'IdentityException',
+    'ChecksumException',
+    'ChecksumRequestException',
+    'ChecksumReplyException',
+    'StateException',
+    'StatusAlarmException'
 ]
 
 from .alarm import Alarm
@@ -17,7 +17,7 @@ class Exception(Exception, abc.ABC) :
     """Generic exception."""
     pass
 
-class ExceptionInternal(Exception) :
+class InternalException(Exception) :
     """
     Exception that indicates an internal error.
 
@@ -25,10 +25,10 @@ class ExceptionInternal(Exception) :
     """
     pass
 
-class ExceptionIdentity(Exception) :
+class IdentityException(Exception) :
     """Exception that indicates that an identity is wrong."""
 
-class ExceptionChecksum(Exception, abc.ABC) :
+class ChecksumException(Exception, abc.ABC) :
     """
     Exception that indicates that the checksum of a request or a reply is wrong.
 
@@ -37,7 +37,7 @@ class ExceptionChecksum(Exception, abc.ABC) :
     """
     pass
 
-class ExceptionChecksumRequest(ExceptionChecksum) :
+class ChecksumRequestException(ChecksumException) :
     """
     Exception that indicates that the checksum of a request is wrong.
 
@@ -45,7 +45,7 @@ class ExceptionChecksumRequest(ExceptionChecksum) :
     """
     pass
 
-class ExceptionChecksumReply(Exception) :
+class ChecksumReplyException(Exception) :
     """
     Exception that indicates that the checksum of a reply is wrong.
 
@@ -53,14 +53,14 @@ class ExceptionChecksumReply(Exception) :
     """
     pass
 
-class ExceptionState(Exception) :
+class StateException(Exception) :
     """
     Exception that indicates that a method was invoked in a state when it is not allowed to be
     invoked.
     """
     pass
 
-class ExceptionStatusAlarm(Exception) :
+class StatusAlarmException(Exception) :
     """Exception that indicates that the pump has an alarm status."""
 
     def __init__(self, alarm : Alarm) -> None :
