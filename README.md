@@ -30,8 +30,8 @@ pump.pumping_rate = 20.0
 ### Identifying
 
 ``` python
-# Prints the identity of the pump (e.g. "1000" for NE-1000).
-print(pump.identity)
+# Prints the model number of the pump (e.g. "1000" for NE-1000).
+print(pump.model_number)
 # Prints the firmware version of the pump (e.g. "(3, 928)" for 3.928).
 print(pump.firmware_version)
 ```

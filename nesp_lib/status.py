@@ -3,17 +3,17 @@ import enum
 class Status(enum.Enum) :
     """Status of a pump."""
 
-    # Pump infusing.
     INFUSING = enum.auto()
-    # Pump withdrawing.
+    """Pump infusing."""
     WITHDRAWING = enum.auto()
-    # Pump purging.
+    """Pump withdrawing."""
     PURGING = enum.auto()
-    # Pumping stopped.
+    """Pump purging."""
     STOPPED = enum.auto()
-    # Pumping paused.
+    """Pumping stopped."""
     PAUSED = enum.auto()
-    # Pumping program sleeping (Pause phase).
+    """Pumping paused."""
     SLEEPING = enum.auto()
-    # Pumping program waiting (for a user input).
+    """Pumping program sleeping (Pause phase)."""
     WAITING = enum.auto()
+    """Pumping program waiting (for a user input)."""

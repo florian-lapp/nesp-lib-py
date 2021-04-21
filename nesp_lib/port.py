@@ -3,7 +3,7 @@ import serial
 class Port :
     """Port a pump is connected to."""
 
-    BAUD_RATE_DEFAULT : int = 9600
+    BAUD_RATE_DEFAULT = 9_600
     """Default baud rate."""
 
     class Unavailability(Exception) :
@@ -12,11 +12,17 @@ class Port :
 
     def __init__(self, name : str, baud_rate : int = BAUD_RATE_DEFAULT) -> None :
         """
-        Constructs a port with the given name and baud rate.
+        Constructs a port.
 
-        Raises `ValueError` if the baud rate is invalid with the port.
+        :param name:
+            Name of the port.
+        :param baud_rate:
+            Baud rate at which data is exchanged via the port.
 
-        Raises `Unavailability` if the port is unavailable.
+        :raises ValueError:
+            Baud rate invalid.
+        :raises Unavailability:
+            Port unavailable (e.g. in use or not connected).
         """
         try :
             self.__serial = serial.Serial(
@@ -28,20 +34,30 @@ class Port :
         except serial.SerialException :
             raise Port.Unavailability()
 
-    def transmit(self, data : bytes) -> None :
-        """Transmits the given data to the port."""
+    def _transmit(self, data : bytes) -> None :
+        """
+        Transmits data to the port.
+
+        :param data:
+            Data to transmit.
+        """
         self.__serial.write(data)
 
-    def receive(self, data_length : int) -> bytes :
-        """Receives data of the given length from the port."""
+    def _receive(self, data_length : int) -> bytes :
+        """
+        Receives data from the port.
+
+        :param data_length:
+            Length of the data to receive.
+        """
         return self.__serial.read(data_length)
 
     @property
-    def waiting_transmit(self) -> int :
+    def _waiting_transmit(self) -> int :
         """Gets the length of data waiting to be transmitted."""
         return self.__serial.out_waiting
 
     @property
-    def waiting_receive(self) -> int :
+    def _waiting_receive(self) -> int :
         """Gets the length of data waiting to be received."""
         return self.__serial.in_waiting
