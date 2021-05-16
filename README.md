@@ -6,6 +6,26 @@ Systems.
 These pumps are also distributed under different names, like Aladdin by World Precision Instruments
 (WPI) and LA by Landgraf Laborsysteme.
 
+## Features
+
+- Object-oriented design
+- Documented public elements via type hints and docstrings
+- Signaling errors via exceptions
+- Blocking and non-blocking running
+- Sending heartbeat messages automatically
+
+## Installing
+
+```
+pip install NESP-Lib
+```
+
+## Importing
+
+``` python
+import nesp_lib
+```
+
 ## Examples
 
 ### Configuring

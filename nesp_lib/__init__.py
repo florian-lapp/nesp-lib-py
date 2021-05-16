@@ -1,3 +1,8 @@
+"""NESP-Lib – New Era Syringe Pump Library for Python"""
+
+VERSION = '1.0.0'
+"""Version of NESP-Lib."""
+
 from .port import Port
 from .pump import Pump
 from .pumping_direction import PumpingDirection

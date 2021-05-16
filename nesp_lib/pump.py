@@ -312,9 +312,16 @@ class Pump :
         """
         self.__command_transceive(Pump.__CommandName.RUN_PURGE)
 
-    def stop(self) -> None :
-        """Stops the pump."""
+    def stop(self, wait_while_running : bool = True) -> None :
+        """
+        Stops the pump.
+
+        :param wait_while_running:
+            If the function waits while the pump is running.
+        """
         self.__command_transceive(Pump.__CommandName.STOP)
+        if wait_while_running :
+            self.wait_while_running()
 
     def wait_while_running(self) -> None :
         """Waits while the pump is running."""
