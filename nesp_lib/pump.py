@@ -51,7 +51,7 @@ class Pump :
             Address of the pump.
         :param model_number:
             Model number of the pump.
-            If not `MODEL_NUMBER_IGNORE` and and not equal to the model number of the pump
+            If not `MODEL_NUMBER_IGNORE` and not equal to the model number of the pump
             `ModelException` is raised.
         :param safe_mode_timeout:
             Safe mode timeout of the pump in units of seconds.
@@ -80,7 +80,7 @@ class Pump :
             raise ModelException()
         self.__model_number = model_number_port
         self.__firmware_version = firmware_version_port
-        self.__firmware_upgrade = firmware_upgrade
+        self.__firmware_upgrade = firmware_upgrade_port
 
     @property
     def address(self) -> int :
