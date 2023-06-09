@@ -73,11 +73,14 @@ class Pump :
         self.__heartbeat_event : typing.Optional[threading.Event] = None
         self.__heartbeat_event_timeout = 0.0
         self.__safe_mode_timeout_set(safe_mode_timeout, True)
-        model_number_port, firmware_version_port = self.__firmware_version_get()
+        model_number_port, firmware_version_port, firmware_upgrade_port = (
+            self.__firmware_version_get()
+        )
         if model_number != Pump.MODEL_NUMBER_IGNORE and model_number_port != model_number :
             raise ModelException()
         self.__model_number = model_number_port
         self.__firmware_version = firmware_version_port
+        self.__firmware_upgrade = firmware_upgrade
 
     @property
     def address(self) -> int :
@@ -101,6 +104,15 @@ class Pump :
     def firmware_version(self) -> typing.Tuple[int, int] :
         """Gets the firmware version of the pump as major version and minor version."""
         return self.__firmware_version
+
+    @property
+    def firmware_upgrade(self) -> int :
+        """
+        Gets the firmware upgrade of the pump.
+
+        Zero if the pump has no firmware upgrade.
+        """
+        return self.__firmware_upgrade
 
     @property
     def safe_mode_timeout(self) -> int :
@@ -372,9 +384,12 @@ class Pump :
     __RE_FLOAT   = r'(\d+\.\d*)'
     __RE_SYMBOL  = '([A-Z]+)'
 
-    # Format: "NE" <Model number> "V" <Firmware major version> "." <Firmware minor version>
+    # Format: "NE" <Model number> ("X" (<Firmware upgrade>)?)? "V"
+    # <Firmware major version> "." <Firmware minor version>
     __RE_PATTERN_FIRMWARE_VERSION = re.compile(
-        'NE' + __RE_INTEGER + 'V' + __RE_INTEGER + r'\.' + __RE_INTEGER, re.ASCII
+        'NE' + __RE_INTEGER + '(X' + __RE_INTEGER + '?)?' + 'V' +
+        __RE_INTEGER + r'\.' + __RE_INTEGER,
+        re.ASCII
     )
     __RE_PATTERN_SAFE_MODE_TIMEOUT = re.compile(__RE_INTEGER, re.ASCII)
     __RE_PATTERN_SYRINGE_DIAMETER = re.compile(__RE_FLOAT, re.ASCII)
@@ -680,14 +695,15 @@ class Pump :
             else :
                 self.__command_transceive(Pump.__CommandName.STATUS)
 
-    def __firmware_version_get(self) -> typing.Tuple[int, typing.Tuple[int, int]] :
+    def __firmware_version_get(self) -> typing.Tuple[int, typing.Tuple[int, int], int] :
         _, match = self.__command_transceive(
             Pump.__CommandName.FIRMWARE_VERSION, [], Pump.__RE_PATTERN_FIRMWARE_VERSION
         )
         model_number = int(match[1])
-        version_major = int(match[2])
-        version_minor = int(match[3])
-        return model_number, (version_major, version_minor)
+        upgrade = 0 if match[2] is None else 1 if match[3] is None else int(match[3])
+        version_major = int(match[4])
+        version_minor = int(match[5])
+        return model_number, (version_major, version_minor), upgrade
 
     def __dispensation_get(self, withdrawn : bool) -> float :
         _, match = self.__command_transceive(
