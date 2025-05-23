@@ -61,3 +61,7 @@ class Port :
     def _waiting_receive(self) -> int :
         """Gets the length of data waiting to be received."""
         return self.__serial.in_waiting
+    
+    def close(self):
+        """Close the serial connection."""
+        self.__serial.close()
