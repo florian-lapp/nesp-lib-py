@@ -1,3 +1,6 @@
+import types
+import typing
+
 import serial
 
 class Port :
@@ -12,7 +15,7 @@ class Port :
 
     def __init__(self, name : str, baud_rate : int = BAUD_RATE_DEFAULT) -> None :
         """
-        Constructs a port.
+        Constructs and opens a port.
 
         :param name:
             Name of the port.
@@ -33,6 +36,19 @@ class Port :
             raise ValueError('Baud rate invalid.')
         except serial.SerialException :
             raise Port.Unavailability()
+
+    def close(self) -> None :
+        """Closes the port."""
+        self.__serial.close()
+
+    def __enter__(self) -> "Port" :
+        return self
+
+    def __exit__(
+        self, type_ : typing.Optional[type[BaseException]], value : typing.Optional[BaseException],
+        traceback : typing.Optional[types.TracebackType],
+    ) -> None :
+        self.close()
 
     def _transmit(self, data : bytes) -> None :
         """
