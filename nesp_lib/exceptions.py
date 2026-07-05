@@ -14,11 +14,11 @@ __all__ = [
     'StatusAlarmException'
 ]
 
-class Exception(Exception, abc.ABC) :
+class Exception(Exception, abc.ABC):
     """Generic exception."""
     pass
 
-class InternalException(Exception) :
+class InternalException(Exception):
     """
     Exception that indicates an internal error.
 
@@ -26,15 +26,15 @@ class InternalException(Exception) :
     """
     pass
 
-class AddressException(Exception) :
+class AddressException(Exception):
     """Exception that indicates that an address is wrong."""
     pass
 
-class ModelException(Exception) :
+class ModelException(Exception):
     """Exception that indicates that a model is wrong."""
     pass
 
-class ChecksumException(Exception, abc.ABC) :
+class ChecksumException(Exception, abc.ABC):
     """
     Exception that indicates that the checksum of a request or a reply is wrong.
 
@@ -42,7 +42,7 @@ class ChecksumException(Exception, abc.ABC) :
     """
     pass
 
-class ChecksumRequestException(ChecksumException) :
+class ChecksumRequestException(ChecksumException):
     """
     Exception that indicates that the checksum of a request is wrong.
 
@@ -50,7 +50,7 @@ class ChecksumRequestException(ChecksumException) :
     """
     pass
 
-class ChecksumReplyException(Exception) :
+class ChecksumReplyException(Exception):
     """
     Exception that indicates that the checksum of a reply is wrong.
 
@@ -58,17 +58,17 @@ class ChecksumReplyException(Exception) :
     """
     pass
 
-class StateException(Exception) :
+class StateException(Exception):
     """
     Exception that indicates that a function was invoked on an object when that object was in a
     state that prohibits the invocation of that function.
     """
     pass
 
-class StatusAlarmException(Exception) :
+class StatusAlarmException(Exception):
     """Exception that indicates that an object is in an alarm status."""
 
-    def __init__(self, alarm_status : AlarmStatus) -> None :
+    def __init__(self, alarm_status: AlarmStatus) -> None:
         """
         Constructs an exception.
 
@@ -78,6 +78,6 @@ class StatusAlarmException(Exception) :
         self.__alarm_status = alarm_status
 
     @property
-    def alarm_status(self) -> AlarmStatus :
+    def alarm_status(self) -> AlarmStatus:
         """Gets the alarm status of the exception."""
         return self.__alarm_status

@@ -1,6 +1,6 @@
 import enum
 
-class Status(enum.Enum) :
+class Status(enum.Enum):
     """Status of a pump."""
 
     INFUSING = enum.auto()

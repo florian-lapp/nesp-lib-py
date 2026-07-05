@@ -3,17 +3,17 @@ import typing
 
 import serial
 
-class Port :
+class Port:
     """Port a pump is connected to."""
 
     BAUD_RATE_DEFAULT = 9_600
     """Default baud rate."""
 
-    class Unavailability(Exception) :
+    class Unavailability(Exception):
         """Exception that indicates the unavailability of a port."""
         pass
 
-    def __init__(self, name : str, baud_rate : int = BAUD_RATE_DEFAULT) -> None :
+    def __init__(self, name: str, baud_rate: int = BAUD_RATE_DEFAULT) -> None:
         """
         Constructs and opens a port.
 
@@ -27,30 +27,27 @@ class Port :
         :raises Unavailability:
             Port unavailable (e.g. in use or not connected).
         """
-        try :
-            self.__serial = serial.Serial(
-                port = name,
-                baudrate = baud_rate
-            )
-        except ValueError :
+        try:
+            self.__serial = serial.Serial(port = name, baudrate = baud_rate)
+        except ValueError:
             raise ValueError('Baud rate invalid.')
-        except serial.SerialException :
+        except serial.SerialException:
             raise Port.Unavailability()
 
-    def close(self) -> None :
+    def close(self) -> None:
         """Closes the port."""
         self.__serial.close()
 
-    def __enter__(self) -> "Port" :
+    def __enter__(self) -> "Port":
         return self
 
     def __exit__(
-        self, type_ : typing.Optional[type[BaseException]], value : typing.Optional[BaseException],
-        traceback : typing.Optional[types.TracebackType],
-    ) -> None :
+        self, type_: typing.Optional[type[BaseException]], value: typing.Optional[BaseException],
+        traceback: typing.Optional[types.TracebackType],
+    ) -> None:
         self.close()
 
-    def _transmit(self, data : bytes) -> None :
+    def _transmit(self, data: bytes) -> None:
         """
         Transmits data to the port.
 
@@ -59,7 +56,7 @@ class Port :
         """
         self.__serial.write(data)
 
-    def _receive(self, data_length : int) -> bytes :
+    def _receive(self, data_length: int) -> bytes:
         """
         Receives data from the port.
 
@@ -69,11 +66,11 @@ class Port :
         return self.__serial.read(data_length)
 
     @property
-    def _waiting_transmit(self) -> int :
+    def _waiting_transmit(self) -> int:
         """Gets the length of data waiting to be transmitted."""
         return self.__serial.out_waiting
 
     @property
-    def _waiting_receive(self) -> int :
+    def _waiting_receive(self) -> int:
         """Gets the length of data waiting to be received."""
         return self.__serial.in_waiting

@@ -1,6 +1,6 @@
 import enum
 
-class AlarmStatus(enum.Enum) :
+class AlarmStatus(enum.Enum):
     """Alarm status of a pump."""
 
     RESET = enum.auto()

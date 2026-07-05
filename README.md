@@ -51,7 +51,7 @@ port.close()
 from nesp_lib import Port
 
 # Constructs, opens and automatically closes the port to which the pump is connected.
-with Port('COM1') as port :
+with Port('COM1') as port:
     # Do something here while the port is open.
     ...
 ```
@@ -65,16 +65,16 @@ from nesp_lib import Pump, PumpingDirection
 pump = Pump(port)
 
 # Sets the syringe diameter of the pump in units of millimeters.
-pump.syringe_diameter = 30.0
+pump.syringe_diameter_mm = 30.0
 
 # Sets the pumping direction of the pump.
 pump.pumping_direction = PumpingDirection.INFUSE
 
 # Sets the pumping volume of the pump in units of milliliters.
-pump.pumping_volume = 1.0
+pump.pumping_volume_ml = 1.0
 
 # Sets the pumping rate of the pump in units of milliliters per minute.
-pump.pumping_rate = 20.0
+pump.pumping_rate_ml_per_min = 20.0
 ```
 
 ### Identifying a Pump
@@ -113,7 +113,7 @@ pump.wait_while_running()
 pump.run(False)
 
 # Waits while the pump is running.
-while pump.running :
+while pump.running:
     # Do something here while the pump is running.
     ...
 
